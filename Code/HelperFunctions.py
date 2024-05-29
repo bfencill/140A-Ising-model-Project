@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
 from scipy.ndimage import label
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 def Plot(lattice, title):
     size = lattice.shape[0]
@@ -14,7 +16,7 @@ def Plot(lattice, title):
 
 def Plot_save(lattice, title, save_directory, filename):
     size = lattice.shape[0]
-    plt.figure(figsize=(min(7, size/10), min(7, size/10)))
+    plt.figure(figsize=(size/5, size/5))
     plt.imshow(lattice, cmap='binary', interpolation='nearest')
     plt.title(title)
     plt.axis('off')
@@ -54,3 +56,36 @@ def Estimate_Largest_Cluster(spin_lattice):
     labeled_array, num_features = label(spin_lattice == 1)
     sizes = [np.sum(labeled_array == i) for i in range(1, num_features + 1)]
     return max(sizes) if sizes else 0
+
+def Create_Gif_From_Frames(frames, output_gif_path, fps=10, time_interval=1000):
+    fig = plt.figure(figsize=(5, 5))
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+
+    def update_frame(i):
+        ax.clear()
+        ax.axis('off')
+        ax.imshow(frames[i], cmap='binary', interpolation='nearest')
+        ax.set_title('Time Step: ' + str(i * time_interval))
+
+    ani = animation.FuncAnimation(fig, update_frame, frames=len(frames), interval=time_interval/fps)
+    ani.save(output_gif_path, writer='imagemagick')
+
+def Plot_Largest_Cluster_Size(temperature_cluster_sizes, title, save_directory=None, filename=None):
+    temperatures = list(temperature_cluster_sizes.keys())
+    cluster_sizes = list(temperature_cluster_sizes.values())
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(temperatures, cluster_sizes, marker='o', linestyle='-')
+    plt.xlabel('Temperature (T)')
+    plt.ylabel('Largest Cluster Size')
+    plt.title(title)
+    plt.grid(True)
+    
+    if save_directory and filename:
+        if not os.path.exists(save_directory):
+            os.makedirs(save_directory)
+        plt.savefig(os.path.join(save_directory, filename))
+        plt.close()
+    else:
+        plt.show()
