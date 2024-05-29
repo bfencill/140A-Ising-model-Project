@@ -66,7 +66,7 @@ def Estimate_Largest_Cluster(spin_lattice):
     
     return largest_cluster_size
 
-def Create_Gif_From_Frames(frames, output_gif_path, fps=10, time_interval=1000):
+def Create_Gif_From_Frames(frames, output_gif_path, fps=30, time_interval=1000):
     fig = plt.figure(figsize=(5, 5))
     ax = fig.add_subplot(111)
     ax.axis('off')
