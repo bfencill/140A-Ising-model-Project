@@ -2,17 +2,19 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
-
+from scipy.ndimage import label
 
 def Plot(lattice, title):
-    plt.figure(figsize=(7, 7))
+    size = lattice.shape[0]
+    plt.figure(figsize=(size/5, size/5))
     plt.imshow(lattice, cmap='binary', interpolation='nearest')
     plt.title(title)
     plt.axis('off')
     plt.show()
 
 def Plot_save(lattice, title, save_directory, filename):
-    plt.figure(figsize=(7, 7))
+    size = lattice.shape[0]
+    plt.figure(figsize=(min(7, size/10), min(7, size/10)))
     plt.imshow(lattice, cmap='binary', interpolation='nearest')
     plt.title(title)
     plt.axis('off')
@@ -24,12 +26,10 @@ def Plot_save(lattice, title, save_directory, filename):
     plt.close()
 
 def Find_Images_Directory():
-    for root, dirs, files in os.walk('.'):
+    for root, dirs, files in os.walk('..'):
         if 'Images' in dirs:
             return os.path.join(root, 'Images')
     raise FileNotFoundError("Images directory not found")
-
-
 
 @jit(nopython=True)
 def Calculate_Energy(spin_lattice, B_field, lattice_size):
@@ -49,3 +49,8 @@ def Calculate_Energy(spin_lattice, B_field, lattice_size):
 @jit(nopython=True)
 def Calculate_Magnetism(spin_lattice):  
     return np.sum(spin_lattice)
+
+def Estimate_Largest_Cluster(spin_lattice):
+    labeled_array, num_features = label(spin_lattice == 1)
+    sizes = [np.sum(labeled_array == i) for i in range(1, num_features + 1)]
+    return max(sizes) if sizes else 0
