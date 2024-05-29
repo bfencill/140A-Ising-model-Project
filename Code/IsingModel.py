@@ -71,7 +71,7 @@ def Run_Simulation_With_GIF(lattice_size, temperature, steps, B_field, save_inte
     initial_lattice = np.random.choice([-1, 1], size=(lattice_size, lattice_size))
     spin_lattice, magnetism, frames = Ising_Model_Simulation(lattice_size, temperature, steps, initial_lattice, B_field, save_interval)
     
-    Create_Gif_From_Frames(frames, gif_output_path)
+    Create_Gif_From_Frames(frames, gif_output_path,time_interval=save_interval)
 
     Plot(spin_lattice, f'Final Spin Configuration at T={temperature}')
     images_directory = Find_Images_Directory()
@@ -90,6 +90,18 @@ def Calculate_Cluster_Size_vs_Temperature(lattice_size, temperatures, steps, B_f
         largest_cluster_size = Estimate_Largest_Cluster(spin_lattice)
         temperature_cluster_sizes[temp] = largest_cluster_size
     return temperature_cluster_sizes
+
+def Calculate_Cluster_Size_vs_Temperature_Multiple_Lattices(lattice_sizes, temperatures, steps, B_field, save_interval):
+    results = {}
+    for lattice_size in lattice_sizes:
+        initial_lattice = np.random.choice([-1, 1], size=(lattice_size, lattice_size))
+        temperature_cluster_sizes = {}
+        for temp in tqdm(temperatures, desc=f"Running Simulations for Lattice Size {lattice_size}"):
+            spin_lattice, magnetism, _ = Ising_Model_Simulation(lattice_size, temp, steps, np.copy(initial_lattice), B_field, save_interval)
+            largest_cluster_size = Estimate_Largest_Cluster(spin_lattice)
+            temperature_cluster_sizes[temp] = largest_cluster_size
+        results[lattice_size] = temperature_cluster_sizes
+    return results
 
 # Example usage
 if __name__ == "__main__":
