@@ -53,9 +53,18 @@ def Calculate_Magnetism(spin_lattice):
     return np.sum(spin_lattice)
 
 def Estimate_Largest_Cluster(spin_lattice):
-    labeled_array, num_features = label(spin_lattice == 1)
-    sizes = [np.sum(labeled_array == i) for i in range(1, num_features + 1)]
-    return max(sizes) if sizes else 0
+    labeled_array_up, num_features_up = label(spin_lattice == 1)
+    sizes_up = [np.sum(labeled_array_up == i) for i in range(1, num_features_up + 1)]
+    
+    labeled_array_down, num_features_down = label(spin_lattice == -1)
+    sizes_down = [np.sum(labeled_array_down == i) for i in range(1, num_features_down + 1)]
+    
+    largest_cluster_size_up = max(sizes_up) if sizes_up else 0
+    largest_cluster_size_down = max(sizes_down) if sizes_down else 0
+    
+    largest_cluster_size = max(largest_cluster_size_up, largest_cluster_size_down)
+    
+    return largest_cluster_size
 
 def Create_Gif_From_Frames(frames, output_gif_path, fps=10, time_interval=1000):
     fig = plt.figure(figsize=(5, 5))
