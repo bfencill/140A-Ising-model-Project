@@ -6,6 +6,8 @@ from scipy.ndimage import label
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
+np.random.seed(42)
+
 def Plot(lattice, title):
     size = lattice.shape[0]
     plt.figure(figsize=(size/5, size/5))
@@ -66,7 +68,7 @@ def Estimate_Largest_Cluster(spin_lattice):
     
     return largest_cluster_size
 
-def Create_Gif_From_Frames(frames, output_gif_path, fps=30, time_interval=1000):
+def Create_Gif_From_Frames(frames, output_gif_path, fps=30, time_interval=1000, two_lattices=False):
     fig = plt.figure(figsize=(5, 5))
     ax = fig.add_subplot(111)
     ax.axis('off')
@@ -76,6 +78,10 @@ def Create_Gif_From_Frames(frames, output_gif_path, fps=30, time_interval=1000):
         ax.axis('off')
         ax.imshow(frames[i], cmap='binary', interpolation='nearest')
         ax.set_title('Time Step: ' + str(i * time_interval))
+        # If two_lattices is True, then add text to the bottom of the image
+        if two_lattices:
+            ax.text(0.25, -0.05, 'Original Lattice', horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
+            ax.text(0.75, -0.05, 'Transformed Lattice', horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
 
     ani = animation.FuncAnimation(fig, update_frame, frames=len(frames), interval=time_interval/fps)
     ani.save(output_gif_path, writer='imagemagick')
@@ -118,3 +124,45 @@ def Plot_Cluster_Size_vs_Temperature_Multiple_Lattices(results, title, save_dire
             os.makedirs(save_directory)
         plt.savefig(os.path.join(save_directory, filename))
         plt.close()
+
+@jit(nopython=True)
+def Block_Spin_Transformation(spin_lattice, block_size=3):
+    lattice_size = spin_lattice.shape[0]
+    new_size = lattice_size // block_size
+    new_lattice = np.zeros((new_size, new_size), dtype=np.int8)
+    
+    for i in range(new_size):
+        for j in range(new_size):
+            block = spin_lattice[i*block_size:(i+1)*block_size, j*block_size:(j+1)*block_size]
+            if np.sum(block) > 0:
+                new_lattice[i, j] = 1
+            else:
+                new_lattice[i, j] = -1
+    
+    return new_lattice
+
+def Plot_Original_And_Transformed_Lattice(original_lattice, transformed_lattice, title, save_directory=None, filename=None):
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+    if np.all(original_lattice == 1):
+        axs[0].imshow(np.full(original_lattice.shape, -1), cmap='gray', interpolation='nearest')
+    else:
+        axs[0].imshow(original_lattice, cmap='binary', interpolation='nearest')
+    axs[0].set_title('Original Lattice')
+    axs[0].axis('off')
+    
+    if np.all(transformed_lattice == 1):
+        axs[1].imshow(np.full(transformed_lattice.shape, -1), cmap='gray', interpolation='nearest')
+    else:
+        axs[1].imshow(transformed_lattice, cmap='binary', interpolation='nearest')
+    axs[1].set_title('Transformed Lattice')
+    axs[1].axis('off')
+    
+    fig.suptitle(title)
+    
+    if save_directory and filename:
+        if not os.path.exists(save_directory):
+            os.makedirs(save_directory)
+        plt.savefig(os.path.join(save_directory, filename))
+        plt.close()
+    else:
+        plt.show()

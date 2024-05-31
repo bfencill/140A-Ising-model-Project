@@ -1,8 +1,10 @@
 import numpy as np
 from numba import jit
-from HelperFunctions import Calculate_Energy, Calculate_Magnetism, Plot, Plot_save, Find_Images_Directory, Estimate_Largest_Cluster, Create_Gif_From_Frames
+from HelperFunctions import Calculate_Energy, Calculate_Magnetism, Plot, Plot_save, Find_Images_Directory, Estimate_Largest_Cluster, Plot_Largest_Cluster_Size, Plot_Cluster_Size_vs_Temperature_Multiple_Lattices, Block_Spin_Transformation, Plot_Original_And_Transformed_Lattice, Create_Gif_From_Frames
 from tqdm import tqdm
 import os
+
+np.random.seed(42)
 
 @jit(nopython=True)
 def MCMC_step(spin_lattice, temperature, B_field, size):
@@ -29,6 +31,24 @@ def Ising_Model_Simulation(size, temperature, steps, spin_lattice, B_field, save
         magnetism.append(Calculate_Magnetism(spin_lattice))
         if (save_interval != 0) and (time_step % save_interval == 0):
             frames.append(np.copy(spin_lattice))
+    return spin_lattice, magnetism, frames
+
+def Ising_Model_Simulation_Block_Transformation(size, temperature, steps, spin_lattice, B_field, block_size, save_interval=0):
+    frames = []
+    magnetism = []
+    transformed_size = size // block_size
+    for time_step in tqdm(range(steps), desc="Running Simulation"):
+        MCMC_step(spin_lattice, temperature, B_field, size)
+        magnetism.append(Calculate_Magnetism(spin_lattice))
+        if (save_interval != 0) and (time_step % save_interval == 0):
+            # Block spin transformation
+            transformed_lattice = Block_Spin_Transformation(spin_lattice, block_size)
+            # Put the original and transformed lattice in the same frame, for visualization purposes
+            # but keep them fairly separate in the image
+            combined_lattice = np.zeros((size, 2*size))
+            combined_lattice[:, :size] = spin_lattice
+            combined_lattice[transformed_size:2*transformed_size, size + transformed_size: size + 2*transformed_size] = transformed_lattice
+            frames.append(np.copy(combined_lattice))
     return spin_lattice, magnetism, frames
 
 def Run_Simulation_For_Temperatures(lattice_size, temperatures, steps, B_field, discard_metastable=True):
@@ -102,6 +122,22 @@ def Calculate_Cluster_Size_vs_Temperature_Multiple_Lattices(lattice_sizes, tempe
             temperature_cluster_sizes[temp] = largest_cluster_size
         results[lattice_size] = temperature_cluster_sizes
     return results
+
+def Run_Simulation_With_Block_Spin_Transformation(lattice_size, temperature, steps, B_field, save_interval=0, gif_output_path='', block_size=3):
+    initial_lattice = np.random.choice([-1, 1], size=(lattice_size, lattice_size))
+    spin_lattice, magnetism, frames = Ising_Model_Simulation_Block_Transformation(lattice_size, temperature, steps, initial_lattice, B_field, block_size, save_interval)
+    largest_cluster_size = Estimate_Largest_Cluster(spin_lattice)
+
+    if gif_output_path:
+        Create_Gif_From_Frames(frames, gif_output_path, two_lattices=True, time_interval=save_interval)
+    
+    transformed_lattice = Block_Spin_Transformation(spin_lattice, block_size)
+    transformed_largest_cluster_size = Estimate_Largest_Cluster(transformed_lattice) * block_size * block_size
+    
+    Plot_Original_And_Transformed_Lattice(spin_lattice, transformed_lattice, f'Original and Transformed Lattice at T={temperature}')
+    magnetism_transformed = Calculate_Magnetism(transformed_lattice)
+
+    return spin_lattice, transformed_lattice, magnetism, magnetism_transformed, largest_cluster_size, transformed_largest_cluster_size
 
 # Example usage
 if __name__ == "__main__":
