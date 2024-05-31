@@ -101,22 +101,20 @@ def Plot_Largest_Cluster_Size(temperature_cluster_sizes, title, save_directory=N
 
 
 def Plot_Cluster_Size_vs_Temperature_Multiple_Lattices(results, title, save_directory=None, filename=None):
-    plt.figure(figsize=(10, 6))
     for lattice_size, temperature_cluster_sizes in results.items():
         temperatures = list(temperature_cluster_sizes.keys())
         cluster_sizes = list(temperature_cluster_sizes.values())
-        plt.plot(temperatures, cluster_sizes, marker='o', linestyle='-', label=f'Lattice size {lattice_size}')
-    
-    plt.xlabel('Temperature (T)')
-    plt.ylabel('Largest Cluster Size')
-    plt.title(title)
-    plt.legend()
-    plt.grid(True)
+        plt.figure(figsize=(10, 6))
+        plt.plot(temperatures, cluster_sizes, marker='o', linestyle='-')
+        plt.xlabel('Temperature (T)')
+        plt.ylabel('Largest Cluster Size')
+        plt.title(f'{title}, Lattice Size: {lattice_size}')
+        #plt.legend()
+        plt.grid(True)
+        plt.show()
     
     if save_directory and filename:
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
         plt.savefig(os.path.join(save_directory, filename))
         plt.close()
-    else:
-        plt.show()
